@@ -3,6 +3,7 @@ import numpy as np
 import time
 
 # Preprocesamiento
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
@@ -45,7 +46,11 @@ y = train['PriceCategory']
 # -------------------
 # Inciso 3: Preprocesamiento
 # -------------------
+#separacion datos
 print("Inciso 3. Preprocesando características (imputación, escalado, one-hot)...")
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42  # 80% train, 20% test
+)
 num_feats = X.select_dtypes(include=['int64','float64']).columns.tolist()
 cat_feats = X.select_dtypes(include=['object']).columns.tolist()
 num_pipe = Pipeline([
@@ -60,11 +65,15 @@ preprocessor = ColumnTransformer([
     ('num', num_pipe, num_feats),
     ('cat', cat_pipe, cat_feats)
 ])
-X_proc = preprocessor.fit_transform(X)
-if sparse.issparse(X_proc):
-    X_proc = X_proc.toarray()
-le = LabelEncoder().fit(y)
-y_enc = le.transform(y)
+X_train_proc = preprocessor.fit_transform(X_train)
+X_test_proc = preprocessor.transform(X_test)
+
+if sparse.issparse(X_train_proc):
+    X_train_proc = X_train_proc.toarray()
+    X_test_proc = X_test_proc.toarray()
+le = LabelEncoder()
+y_train_enc = le.fit_transform(y_train)
+y_test_enc = le.transform(y_test)
 
 # -------------------
 # Inciso 4: Modelos RNA con MLPClassifier
@@ -78,16 +87,18 @@ results = []
 for clf, name in models:
     print(f"Evaluando {name}...")
     t0 = time.time()
-    clf.fit(X_proc, y_enc)
+    clf.fit(X_train_proc, y_train_enc)
     train_time = time.time() - t0
     t0 = time.time()
-    preds = clf.predict(X_proc)
+    preds_train = clf.predict(X_train_proc)
+    preds_test = clf.predict(X_test_proc)
     pred_time = time.time() - t0
-    acc = accuracy_score(y_enc, preds)
-    cm = confusion_matrix(y_enc, preds)
+    acc_train = accuracy_score(y_train_enc, preds_train)
+    acc_test = accuracy_score(y_test_enc, preds_test)
+    cm = confusion_matrix(y_test_enc, preds_test)
     print(f"Matriz de confusión ({name}):\n{cm}")
-    print(classification_report(y_enc, preds, target_names=le.classes_))
-    results.append({'modelo': name, 'accuracy': acc,
+    print(classification_report(y_test_enc, preds_test, target_names=le.classes_, digits=4))
+    results.append({'modelo': name, 'accuracy': acc_train,
                     'tiempo_train': train_time, 'tiempo_pred': pred_time})
 
 # -------------------
@@ -104,20 +115,24 @@ sk_models = [
 ]
 for clf, name in sk_models:
     print(f"Evaluando {name}...")
-    X_input = X_proc
-    if name == 'NaiveBayes' and sparse.issparse(X_input):
-        X_input = X_input.toarray()
+    X_input_train = X_train_proc
+    X_input_test = X_test_proc
+    if name == 'NaiveBayes' and sparse.issparse(X_input_train):
+        X_input_train = X_input_train.toarray()
+        X_input_test = X_input_test.toarray()
     t0 = time.time()
-    clf.fit(X_input, y_enc)
+    clf.fit(X_input_train, y_train_enc)
     train_time = time.time() - t0
     t0 = time.time()
-    preds = clf.predict(X_input)
+    preds_train = clf.predict(X_input_train)
+    preds_test = clf.predict(X_input_test)
     pred_time = time.time() - t0
-    acc = accuracy_score(y_enc, preds)
-    cm = confusion_matrix(y_enc, preds)
+    acc_train = accuracy_score(y_train_enc, preds_train)
+    acc_test = accuracy_score(y_test_enc, preds_test)
+    cm = confusion_matrix(y_test_enc, preds_test)
     print(f"Matriz de confusión ({name}):\n{cm}")
-    print(classification_report(y_enc, preds, target_names=le.classes_))
-    results.append({'modelo': name, 'accuracy': acc,
+    print(classification_report(y_test_enc, preds_test, target_names=le.classes_, digits=4))
+    results.append({'modelo': name, 'accuracy': acc_train,
                     'tiempo_train': train_time, 'tiempo_pred': pred_time})
 
 # Guardar resumen comparativo
