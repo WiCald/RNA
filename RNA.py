@@ -210,6 +210,7 @@ print(df_reg_results)
 # -------------------
 # Inciso 11: Determinar el mejor según MSE de test
 # -------------------
+print("Inciso 11. Determinar el mejor según MSE de test")
 best = min(reg_results, key=lambda x: x['mse_test'])
 print(f"\nEl mejor modelo es {best['modelo']} con Test MSE = {best['mse_test']:.2f}")
 
