@@ -5,7 +5,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import learning_curve, GridSearchCV
 import matplotlib.pyplot as plt
-
+from tabulate import tabulate
 # Preprocesamiento
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -270,10 +270,37 @@ print("Mejores parámetros encontrados:")
 print(grid.best_params_)
 best_pipe = grid.best_estimator_
 pred_test = best_pipe.predict(X_test_r)
-print(f"Después de tuning → Test MSE: {mean_squared_error(y_test_r, pred_test):.2f}, R2: {r2_score(y_test_r, pred_test):.4f}")
+print(f"Después de tuning. Test MSE: {mean_squared_error(y_test_r, pred_test):.2f}, R2: {r2_score(y_test_r, pred_test):.4f}")
+
+# Convertir en DataFrame para elegir el mejor según accuracy de test
+df_rna = pd.DataFrame([
+    {
+        'modelo': name,
+        'accuracy_train': acc_train,
+        'accuracy_test': acc_test,
+        'tiempo_train': train_time,
+        'tiempo_pred': pred_time
+    }
+    for (clf, name), acc_train, acc_test, train_time, pred_time
+    in zip(models,
+           [r['accuracy'] for r in results[:len(models)]],          # suponiendo que los primeros len(models) son RNA
+           [accuracy_score(y_test_enc, m.predict(X_test_proc))       # recalculamos test accuracy
+            for m in [clf.fit(X_train_proc, y_train_enc) or clf for clf, _ in models]],
+           [r['tiempo_train'] for r in results[:len(models)]],
+           [r['tiempo_pred']  for r in results[:len(models)]])
+])
+
+# Identificar el modelo RNA con mayor accuracy_test
+best_rna = df_rna.loc[df_rna['accuracy_test'].idxmax()]
+
+print(f"Mejor modelo RNA: {best_rna['modelo']}")
+print(f"   Accuracy train: {best_rna['accuracy_train']:.4f}")
+print(f"   Accuracy test:  {best_rna['accuracy_test']:.4f}")
+print(f"   Tiempo train:   {best_rna['tiempo_train']:.4f} s")
+print(f"   Tiempo pred:    {best_rna['tiempo_pred']:.4f} s")
 
 # -------------------
-# Incisos 16-17: COmparacion con modelos
+# Incisos 16-17: Comparacion con modelos
 # -------------------
 data = [
      # Clasificación
