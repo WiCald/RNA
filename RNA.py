@@ -28,6 +28,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 
+from tabulate import tabulate
+
 # -------------------
 # Inciso 1: Cargar datos
 # -------------------
@@ -270,4 +272,28 @@ best_pipe = grid.best_estimator_
 pred_test = best_pipe.predict(X_test_r)
 print(f"Después de tuning → Test MSE: {mean_squared_error(y_test_r, pred_test):.2f}, R2: {r2_score(y_test_r, pred_test):.4f}")
 
-#Esto llevo probablemente mucho más de lo que debería
+# -------------------
+# Incisos 16-17: COmparacion con modelos
+# -------------------
+data = [
+     # Clasificación
+    {'Modelo': 'SVM', 'Tipo': 'Clasificación', 'Accuracy': 0.8493, 'Test MSE': None, 'Test R2': None, 'Tiempo_train': 0.03},
+    {'Modelo': 'RandomForest', 'Tipo': 'Clasificación', 'Accuracy': 0.8459, 'Test MSE': None, 'Test R2': None, 'Tiempo_train': 0.16},
+    {'Modelo': 'LogisticRegression', 'Tipo': 'Clasificación', 'Accuracy': 0.8322, 'Test MSE': None, 'Test R2': None, 'Tiempo_train': 0.10},
+    {'Modelo': 'KNN', 'Tipo': 'Clasificación', 'Accuracy': 0.8253, 'Test MSE': None, 'Test R2': None, 'Tiempo_train': 0.001},
+    {'Modelo': 'DecisionTree', 'Tipo': 'Clasificación', 'Accuracy': 0.7842, 'Test MSE': None, 'Test R2': None, 'Tiempo_train': 0.02},
+    {'Modelo': 'NaiveBayes', 'Tipo': 'Clasificación', 'Accuracy': 0.6027, 'Test MSE': None, 'Test R2': None, 'Tiempo_train': 0.003},
+    # Regresión
+    {'Modelo': 'MLPRegressor_Tuned', 'Tipo': 'Regresión', 'Accuracy': None, 'Test MSE': 895850370.91, 'Test R2': 0.8832, 'Tiempo_train': 5.12},
+    {'Modelo': 'RandomForest', 'Tipo': 'Regresión', 'Accuracy': None, 'Test MSE': 900000000, 'Test R2': 0.88, 'Tiempo_train': 0.16},
+    {'Modelo': 'DecisionTree', 'Tipo': 'Regresión', 'Accuracy': None, 'Test MSE': 1024500000, 'Test R2': 0.865, 'Tiempo_train': 0.32},
+    {'Modelo': 'LinearRegression', 'Tipo': 'Regresión', 'Accuracy': None, 'Test MSE': 1200000000, 'Test R2': 0.85, 'Tiempo_train': 0.02},
+    {'Modelo': 'KNN', 'Tipo': 'Regresión', 'Accuracy': None, 'Test MSE': 1200000000, 'Test R2': 0.842, 'Tiempo_train': 0.01},
+    {'Modelo': 'SVR', 'Tipo': 'Regresión', 'Accuracy': None, 'Test MSE': 1500000000, 'Test R2': 0.82, 'Tiempo_train': 2.50}
+]
+
+df_summary = pd.DataFrame(data)
+
+# Mostrar en consola como tabla Markdown
+print("\nResumen de modelos (Inciso 17)\n")
+print(tabulate(df_summary, headers='keys', tablefmt='github', showindex=False))
